@@ -1,5 +1,7 @@
 #include "modules/pulseaudio.hpp"
 
+#include <spdlog/spdlog.h>
+
 waybar::modules::Pulseaudio::Pulseaudio(const std::string &id, const Json::Value &config)
     : AButton(config, "pulseaudio", id, "{volume}%"),
       mainloop_(nullptr),
@@ -214,6 +216,8 @@ void waybar::modules::Pulseaudio::sinkInfoCb(pa_context * /*context*/, const pa_
     pa->desc_ = i->description;
     pa->monitor_ = i->monitor_source_name;
     pa->port_name_ = i->active_port != nullptr ? i->active_port->name : "Unknown";
+    const char* alsa_name = pa_proplist_gets(i->proplist, "alsa.name");
+    pa->name_ = alsa_name;
     if (auto ff = pa_proplist_gets(i->proplist, PA_PROP_DEVICE_FORM_FACTOR)) {
       pa->form_factor_ = ff;
     } else {
@@ -295,7 +299,8 @@ auto waybar::modules::Pulseaudio::update() -> void {
   }
   format_source = fmt::format(format_source, fmt::arg("volume", source_volume_));
   label_->set_markup(fmt::format(
-      format, fmt::arg("desc", desc_), fmt::arg("volume", volume_),
+	      format, fmt::arg("desc", desc_), fmt::arg("name", name_),
+      fmt::arg("volume", volume_),
       fmt::arg("format_source", format_source), fmt::arg("source_volume", source_volume_),
       fmt::arg("source_desc", source_desc_), fmt::arg("icon", getIcon(volume_, getPulseIcon()))));
   getState(volume_);

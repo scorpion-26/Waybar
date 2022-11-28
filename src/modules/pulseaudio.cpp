@@ -177,6 +177,16 @@ void waybar::modules::Pulseaudio::sourceInfoCb(pa_context * /*context*/, const p
   }
 }
 
+static const char* propListPrettyName(pa_proplist* prop)
+{
+    const char* alsa_name = pa_proplist_gets(prop, "alsa.name");
+    if (alsa_name) return alsa_name;
+    // Try bluez.alias
+    const char* bluez_alias = pa_proplist_gets(prop, "bluez.alias");
+    if (bluez_alias) return bluez_alias;
+    return "Unknown";
+}
+
 /*
  * Called when the requested sink information is ready.
  */
@@ -216,8 +226,7 @@ void waybar::modules::Pulseaudio::sinkInfoCb(pa_context * /*context*/, const pa_
     pa->desc_ = i->description;
     pa->monitor_ = i->monitor_source_name;
     pa->port_name_ = i->active_port != nullptr ? i->active_port->name : "Unknown";
-    const char* alsa_name = pa_proplist_gets(i->proplist, "alsa.name");
-    pa->name_ = alsa_name;
+    pa->name_ = propListPrettyName(i->proplist);
     if (auto ff = pa_proplist_gets(i->proplist, PA_PROP_DEVICE_FORM_FACTOR)) {
       pa->form_factor_ = ff;
     } else {
